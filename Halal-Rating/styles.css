@@ -1,0 +1,103 @@
+:root{
+  color-scheme: light dark;
+  --bg: #0b0c10;
+  --panel: #111218;
+  --text: #e9eef5;
+  --muted: #9aa3b2;
+  --primary: #5ac8fa;
+  --danger: #ff5e57;
+  --border: #23252d;
+}
+
+[data-theme="light"]{
+  color-scheme: light;
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --text: #0b0c10;
+  --muted: #5b6372;
+  --primary: #0ea5e9;
+  --danger: #dc2626;
+  --border: #e6e8ef;
+}
+
+*{box-sizing:border-box}
+html,body,#app{height:100%}
+body{
+  margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  background: var(--bg); color: var(--text);
+}
+
+main{padding:16px 16px 96px; max-width: 1000px; margin: 0 auto;}
+h1{font-size:1.6rem;margin:8px 0 12px}
+h2{font-size:1.2rem;margin:16px 0 8px;color:var(--muted)}
+label{display:block;margin:8px 0 4px}
+input,button{font:inherit}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text)}
+button{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer}
+button:hover{border-color:var(--primary)}
+button.secondary{opacity:.9}
+button.danger{border-color:var(--danger);color:#fff;background: #2a0f13}
+
+.row{display:flex;gap:12px;align-items:center}
+.row.space{justify-content:space-between}
+.row.right{justify-content:flex-end}
+.column{display:flex;flex-direction:column}
+.gap{gap:12px}
+.top{margin-top:12px}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px}
+.rank-emblem-wrap{display:flex;justify-content:flex-start;margin-bottom:6px}
+.rank-emblem{width:128px;height:128px;object-fit:contain}
+.rank-name{font-size:1.6rem;font-weight:800}
+.list{display:flex;flex-direction:column;gap:10px}
+.list .item{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
+.item.user{display:flex;align-items:center;gap:10px}
+.item.user img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border)}
+.photo-thumb{height:64px;border-radius:10px;margin-right:8px;border:1px solid var(--border);cursor:pointer}
+.photo-thumb:hover{opacity:.9}
+
+.progress{position:relative;background:linear-gradient(180deg, rgba(0,0,0,0.06), rgba(255,255,255,0.04));border-radius:12px;height:12px;margin-top:8px;overflow:hidden;border:1px solid var(--border)}
+.progress-bar{background:linear-gradient(90deg, var(--primary), #34d1bf);height:100%;width:0%}
+.progress-meta{position:absolute;right:8px;top:16px;display:flex;flex-direction:column;align-items:flex-end}
+.small{font-size:.78rem}
+.muted{color:var(--muted)}
+
+.profile-header{display:flex;gap:12px;align-items:center}
+.avatar{width:64px;height:64px;border-radius:50%;background:#2a2e39;border:1px solid var(--border);object-fit:cover}
+.username{font-weight:800}
+.profile-actions{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.profile-actions button{width:100%}
+
+/* Screens */
+.screen{display:none}
+.screen.active{display:block}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--panel);backdrop-filter: blur(10px);display:grid;grid-template-columns: repeat(5,1fr);gap:6px;padding:10px 16px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;justify-content:center;height:40px}
+.nav-btn svg{width:22px;height:22px;fill:var(--text);opacity:.9}
+.fab{position:fixed;right:18px;bottom:80px;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#001018;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(0,0,0,.3)}
+.fab.hidden{display:none}
+
+/* Modals */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:10}
+.modal.hidden{display:none}
+.modal-content{width:min(520px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.hint{color:var(--muted);font-size:.9rem}
+
+/* Utility */
+.hidden{display:none !important}
+
+/* Chips */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 10px;border-radius:999px;background:#1e2330;border:1px solid var(--border);font-size:.9rem}
+.photo-thumb{height:64px;border-radius:10px;margin-right:8px;border:1px solid var(--border);cursor:pointer}
+.photo-thumb:hover{opacity:.9}
+
+@media (min-width: 1024px){
+  .nav-btn svg{width:24px;height:24px}
+  h1{font-size:1.8rem}
+  .avatar{width:72px;height:72px}
+}
+
+
