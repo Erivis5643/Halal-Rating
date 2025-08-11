@@ -347,9 +347,16 @@
       (evs||[]).forEach(ep => {
         const el = document.createElement('div');
         el.className = 'item';
-        const photos = (ep.photos||[]).map(u => `<img src="${u}" alt="photo" style="height:48px;border-radius:8px;margin-right:6px"/>`).join('');
+        const photos = (ep.photos||[]).map(u => `<img src="${u}" alt="photo" class="photo-thumb" data-full="${u}"/>`).join('');
         el.innerHTML = `<strong>${ep.events?.name||''}</strong> — 🏆 ${ep.trophies_awarded}<div class="row">${photos}</div>`;
         userEventsListEl.appendChild(el);
+        el.querySelectorAll('.photo-thumb').forEach(img => {
+          img.addEventListener('click', (e) => {
+            const full = e.currentTarget.getAttribute('data-full');
+            previewImage.src = full;
+            previewModal.classList.remove('hidden');
+          });
+        });
       });
       if (!evs || evs.length === 0) userEventsListEl.innerHTML = '<div class="item">Noch keine Ereignisse</div>';
     }
@@ -383,10 +390,21 @@
       return;
     }
     futureEventsListEl.innerHTML = '';
+    const isAdmin = await isAdminCurrentUser();
     data.forEach(ev => {
       const el = document.createElement('div');
       el.className = 'item';
       el.innerHTML = `<strong>${ev.name}</strong> — ${ev.description||''}<br/>📅 ${ev.event_date||''} • 🏆 ${ev.trophy_amount||0}`;
+      if (isAdmin) {
+        const btn = document.createElement('button');
+        btn.className = 'danger';
+        btn.textContent = 'Ereignis löschen';
+        btn.addEventListener('click', async () => {
+          await client.rpc('admin_delete_event', { p_event: ev.id });
+          await renderFutureEvents();
+        });
+        el.appendChild(btn);
+      }
       futureEventsListEl.appendChild(el);
     });
   }
