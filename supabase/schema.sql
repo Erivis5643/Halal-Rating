@@ -179,6 +179,9 @@ begin
   insert into public.user_awards(user_id, award_id) values (p_user, p_award)
   on conflict (user_id, award_id) do nothing
   returning id into new_id;
+  if new_id is not null then
+    update public.profiles set total_trophies = total_trophies + 50 where id = p_user;
+  end if;
   return coalesce(new_id, gen_random_uuid()); -- return a synthetic id if it already existed
 end;$$;
 grant execute on function public.admin_grant_award(uuid, uuid) to authenticated;
@@ -188,9 +191,13 @@ create or replace function public.admin_remove_user_award(
   p_user uuid,
   p_award uuid
 ) returns void language plpgsql security definer set search_path = public as $$
+declare removed_id uuid;
 begin
   if not public.is_admin() then raise exception 'not authorized'; end if;
-  delete from public.user_awards where user_id = p_user and award_id = p_award;
+  delete from public.user_awards where user_id = p_user and award_id = p_award returning id into removed_id;
+  if removed_id is not null then
+    update public.profiles set total_trophies = greatest(0, total_trophies - 50) where id = p_user;
+  end if;
 end;$$;
 grant execute on function public.admin_remove_user_award(uuid, uuid) to authenticated;
 
@@ -208,4 +215,20 @@ begin
   end if;
 end;$$;
 grant execute on function public.admin_remove_event_participation(uuid) to authenticated;
+
+-- Admin delete future event
+create or replace function public.admin_delete_event(
+  p_event uuid
+) returns void language plpgsql security definer set search_path = public as $$
+declare k public.event_kind;
+begin
+  if not public.is_admin() then raise exception 'not authorized'; end if;
+  select kind into k from public.events where id = p_event;
+  if k = 'future' then
+    delete from public.events where id = p_event;
+  else
+    raise exception 'only future events can be deleted via this RPC';
+  end if;
+end;$$;
+grant execute on function public.admin_delete_event(uuid) to authenticated;
 
