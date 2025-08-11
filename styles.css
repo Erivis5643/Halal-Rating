@@ -1,10 +1,10 @@
 :root{
   color-scheme: light dark;
-  --bg: #0b0c10;
-  --panel: #111218;
+  --bg: radial-gradient(circle at 20% 0%, #0e1525 0%, #0b0c10 50%);
+  --panel: #0f1320;
   --text: #e9eef5;
   --muted: #9aa3b2;
-  --primary: #5ac8fa;
+  --primary: #4cc9f0;
   --danger: #ff5e57;
   --border: #23252d;
 }
@@ -25,6 +25,7 @@ html,body,#app{height:100%}
 body{
   margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
   background: var(--bg); color: var(--text);
+  background-attachment: fixed;
 }
 
 main{padding:16px 16px 96px; max-width: 1000px; margin: 0 auto;}
@@ -45,19 +46,19 @@ button.danger{border-color:var(--danger);color:#fff;background: #2a0f13}
 .gap{gap:12px}
 .top{margin-top:12px}
 
-.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.1)), var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px}
 .rank-emblem-wrap{display:flex;justify-content:flex-start;margin-bottom:6px}
 .rank-emblem{width:128px;height:128px;object-fit:contain}
 .rank-name{font-size:1.6rem;font-weight:800}
 .list{display:flex;flex-direction:column;gap:10px}
-.list .item{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
+.list .item{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.1)), var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px}
 .item.user{display:flex;align-items:center;gap:10px}
 .item.user img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border)}
-.photo-thumb{height:64px;border-radius:10px;margin-right:8px;border:1px solid var(--border);cursor:pointer}
+.photo-thumb{height:88px;border-radius:12px;margin-right:10px;border:1px solid var(--border);cursor:pointer}
 .photo-thumb:hover{opacity:.9}
 
-.progress{position:relative;background:linear-gradient(180deg, rgba(0,0,0,0.06), rgba(255,255,255,0.04));border-radius:12px;height:12px;margin-top:8px;overflow:hidden;border:1px solid var(--border)}
-.progress-bar{background:linear-gradient(90deg, var(--primary), #34d1bf);height:100%;width:0%}
+.progress{position:relative;background:linear-gradient(180deg, rgba(0,0,0,0.06), rgba(255,255,255,0.04));border-radius:12px;height:14px;margin-top:8px;overflow:hidden;border:1px solid var(--border)}
+.progress-bar{background:linear-gradient(90deg, #00f5d4, var(--primary));height:100%;width:0%}
 .progress-meta{position:absolute;right:8px;top:16px;display:flex;flex-direction:column;align-items:flex-end}
 .small{font-size:.78rem}
 .muted{color:var(--muted)}
@@ -73,7 +74,7 @@ button.danger{border-color:var(--danger);color:#fff;background: #2a0f13}
 .screen.active{display:block}
 
 /* Bottom nav */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--panel);backdrop-filter: blur(10px);display:grid;grid-template-columns: repeat(5,1fr);gap:6px;padding:10px 16px;border-top:1px solid var(--border)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2)), var(--panel);backdrop-filter: blur(10px);display:grid;grid-template-columns: repeat(5,1fr);gap:6px;padding:12px 18px;border-top:1px solid var(--border)}
 .nav-btn{display:flex;align-items:center;justify-content:center;height:40px}
 .nav-btn svg{width:22px;height:22px;fill:var(--text);opacity:.9}
 .fab{position:fixed;right:18px;bottom:80px;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#001018;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(0,0,0,.3)}
