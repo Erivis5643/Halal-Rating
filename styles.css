@@ -74,9 +74,10 @@ button.danger{border-color:var(--danger);color:#fff;background: #2a0f13}
 .screen.active{display:block}
 
 /* Bottom nav */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2)), var(--panel);backdrop-filter: blur(10px);display:grid;grid-template-columns: repeat(5,1fr);gap:6px;padding:12px 18px;border-top:1px solid var(--border)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2)), var(--panel);backdrop-filter: blur(10px);display:grid;grid-template-columns: repeat(4,1fr);gap:6px;padding:12px 18px;border-top:1px solid var(--border)}
 .nav-btn{display:flex;align-items:center;justify-content:center;height:40px}
 .nav-btn svg{width:22px;height:22px;fill:var(--text);opacity:.9}
+.nav-btn.round{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--panel)}
 .fab{position:fixed;right:18px;bottom:80px;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#001018;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(0,0,0,.3)}
 .fab.hidden{display:none}
 
