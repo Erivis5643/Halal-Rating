@@ -63,6 +63,11 @@ button.danger{border-color:var(--danger);color:#fff;background: #2a0f13}
 .small{font-size:.78rem}
 .muted{color:var(--muted)}
 
+/* Tabs */
+.tab-bar{gap:8px}
+.tab-btn{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--text)}
+.tab-btn.active{border-color:var(--primary)}
+
 .profile-header{display:flex;gap:12px;align-items:center}
 .avatar{width:64px;height:64px;border-radius:50%;background:#2a2e39;border:1px solid var(--border);object-fit:cover}
 .username{font-weight:800}
