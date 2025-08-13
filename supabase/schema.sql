@@ -232,3 +232,46 @@ begin
 end;$$;
 grant execute on function public.admin_delete_event(uuid) to authenticated;
 
+-- Quests: simple daily random selection from catalog, with per-user completion status
+create table if not exists public.quests (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  trophies integer not null default 0,
+  completed boolean not null default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.quest_status (
+  quest_id uuid not null references public.quests(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  completed boolean not null default false,
+  updated_at timestamptz default now(),
+  primary key (quest_id, user_id)
+);
+
+alter table public.quests enable row level security;
+alter table public.quest_status enable row level security;
+
+-- Anyone can read quests
+drop policy if exists quests_read on public.quests;
+create policy quests_read on public.quests for select using (true);
+
+-- Only admins can insert/update/delete quests
+drop policy if exists quests_admin_write on public.quests;
+create policy quests_admin_write on public.quests for all using (public.is_admin()) with check (public.is_admin());
+
+-- quest_status: users can read and upsert their own row
+drop policy if exists quest_status_self on public.quest_status;
+create policy quest_status_self on public.quest_status for select using (auth.uid() = user_id);
+create policy quest_status_insert_self on public.quest_status for insert with check (auth.uid() = user_id);
+create policy quest_status_update_self on public.quest_status for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Admin RPC: mark a quest completed for all users (e.g. to reward after verification)
+create or replace function public.admin_mark_quest_completed(p_quest uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'not authorized'; end if;
+  update public.quests set completed = true where id = p_quest;
+end;$$;
+grant execute on function public.admin_mark_quest_completed(uuid) to authenticated;
+
