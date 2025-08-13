@@ -606,7 +606,7 @@
     const uid = ud?.user?.id;
     if (!uid) return;
     const path = `${uid}/${Date.now()}_${file.name}`;
-    const { error } = await client.storage.from('avatars').upload(path, file, { upsert: false });
+    const { error } = await client.storage.from('avatars').upload(path, file, { upsert: false, contentType: file.type || 'image/*' });
     if (error) return alert(error.message);
     const { data } = client.storage.from('avatars').getPublicUrl(path);
     const avatarUrl = data?.publicUrl;
