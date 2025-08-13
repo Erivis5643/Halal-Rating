@@ -133,8 +133,15 @@
         </section>
 
         <section id="events" class="screen">
-          <h1>Zukünftige Ereignisse</h1>
-          <div id="future-events-list" class="list"></div>
+          <div class="row space">
+            <h1>Ereignisse</h1>
+            <div class="row tab-bar">
+              <button id="btn-tab-quests" class="tab-btn active">Quests</button>
+              <button id="btn-tab-future" class="tab-btn">Zukünftige Ereignisse</button>
+            </div>
+          </div>
+          <div id="quests-list" class="list"></div>
+          <div id="future-events-list" class="list hidden"></div>
         </section>
 
         <section id="profile" class="screen">
