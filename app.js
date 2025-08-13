@@ -53,6 +53,9 @@
   const searchInputEl = document.getElementById('search-input');
   const searchResultsEl = document.getElementById('search-results');
   const futureEventsListEl = document.getElementById('future-events-list');
+  const questsListEl = document.getElementById('quests-list');
+  const btnTabQuests = document.getElementById('btn-tab-quests');
+  const btnTabFuture = document.getElementById('btn-tab-future');
 
   // Supabase client placeholder, config expected in global window.SUPABASE_CONFIG
   let supabaseClient = null;
@@ -72,6 +75,11 @@
     screens.forEach(s => s.classList.remove('active'));
     const target = document.getElementById(targetId);
     if (target) target.classList.add('active');
+    if (targetId === 'events') {
+      // Default to Quests tab on open
+      showQuestsTab();
+      renderQuests();
+    }
   };
 
   navButtons.forEach(btn => {
@@ -385,11 +393,11 @@
     if (!client) return;
     const { data, error } = await client.from('events').select('id, name, description, event_date, trophy_amount').eq('kind', 'future').order('event_date', { ascending: true });
     if (error) return;
+    futureEventsListEl.innerHTML = '';
     if (!data || data.length === 0) {
       futureEventsListEl.innerHTML = '<div class="item">Keine zukünftigen Ereignisse</div>';
       return;
     }
-    futureEventsListEl.innerHTML = '';
     const isAdmin = await isAdminCurrentUser();
     data.forEach(ev => {
       const el = document.createElement('div');
@@ -408,6 +416,108 @@
       futureEventsListEl.appendChild(el);
     });
   }
+
+  // Quests
+  function getTodayKey(){
+    const d = new Date();
+    // YYYY-MM-DD local date key
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  async function fetchDailyQuests(){
+    if (!client) return [];
+    // deterministic daily selection: use SQL seeded random by date string
+    const todayKey = getTodayKey();
+    // Use a stable hash via md5 on todayKey in SQL to seed random ordering
+    const { data, error } = await client
+      .from('quests')
+      .select('id, title, trophies, completed')
+      .order('id', { ascending: true });
+    if (error) return [];
+    const all = data || [];
+    if (all.length === 0) return [];
+    // Simple deterministic shuffle based on today key
+    const rng = mulberry32(cyrb32(todayKey));
+    const arr = [...all];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 3);
+  }
+
+  function cyrb32(str){
+    let h = 9; // small non-zero seed
+    for (let i=0; i<str.length; i++){
+      h = Math.imul(h ^ str.charCodeAt(i), 0x45d9f3b) | 0;
+    }
+    h = (h ^ (h >>> 16)) >>> 0;
+    return h;
+  }
+  function mulberry32(a){
+    return function(){
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  async function renderQuests(){
+    if (!client || !questsListEl) return;
+    questsListEl.innerHTML = '';
+    const quests = await fetchDailyQuests();
+    if (quests.length === 0){
+      questsListEl.innerHTML = '<div class="item">Keine Quests vorhanden</div>';
+      return;
+    }
+    const isAdmin = await isAdminCurrentUser();
+    for (const q of quests){
+      // global completion flag for simplicity
+      const completed = Boolean(q.completed);
+      const active = !completed;
+      const el = document.createElement('div');
+      el.className = 'item';
+      const badge = completed ? '✅ Abgeschlossen' : (active ? '🟢 Aktiv' : '⚪️ Inaktiv');
+      el.innerHTML = `<strong>${q.title}</strong><br/>🏆 ${q.trophies} • ${badge}`;
+      if (isAdmin){
+        const adminRow = document.createElement('div');
+        adminRow.className = 'row top';
+        const btn = document.createElement('button');
+        btn.className = 'secondary';
+        btn.textContent = 'Als abgeschlossen markieren';
+        btn.addEventListener('click', async () => {
+          await markQuestCompletedForAll(q.id);
+          await renderQuests();
+        });
+        adminRow.appendChild(btn);
+        el.appendChild(adminRow);
+      }
+      questsListEl.appendChild(el);
+    }
+  }
+
+  async function markQuestCompletedForAll(questId){
+    // Admin RPC will set all users quest_status.completed=true for today selections
+    if (!client) return;
+    await client.rpc('admin_mark_quest_completed', { p_quest: questId });
+  }
+
+  // Tabs wiring (default Quests)
+  function showQuestsTab(){
+    btnTabQuests?.classList.add('active');
+    btnTabFuture?.classList.remove('active');
+    questsListEl?.classList.remove('hidden');
+    futureEventsListEl?.classList.add('hidden');
+  }
+  function showFutureTab(){
+    btnTabFuture?.classList.add('active');
+    btnTabQuests?.classList.remove('active');
+    futureEventsListEl?.classList.remove('hidden');
+    questsListEl?.classList.add('hidden');
+  }
+  btnTabQuests?.addEventListener('click', async () => { showQuestsTab(); await renderQuests(); });
+  btnTabFuture?.addEventListener('click', async () => { showFutureTab(); await renderFutureEvents(); });
 
   // Username change
   btnChangeUsername.addEventListener('click', async () => {
