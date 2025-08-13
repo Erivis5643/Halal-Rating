@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Halal Rating</title>
-    <link rel="icon" type="image/png" href="./fotos/logo.png">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
@@ -27,7 +26,7 @@
           <label for="auth-password">Passwort</label>
           <input id="auth-password" type="password" placeholder="••••••••" />
           <div class="row">
-            <button id="auth-login">Lock In</button>
+            <button id="auth-login">Einloggen</button>
             <button id="auth-register" class="secondary">Registrieren</button>
           </div>
           <p class="hint">Du brauchst ein Konto, um die App zu nutzen.</p>
@@ -95,7 +94,12 @@
       <!-- Main Screens -->
       <main id="screens">
         <section id="home" class="screen active">
-          <h1>Home</h1>
+          <div class="row space">
+            <h1>Home</h1>
+            <button class="nav-btn round" data-target="profile" aria-label="Profil">
+              <svg viewBox="0 0 24 24"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-4.42 0-8 2.24-8 5v3h16v-3c0-2.76-3.58-5-8-5z"/></svg>
+            </button>
+          </div>
           <div id="rank-card" class="card">
             <div class="row space">
               <div>
@@ -174,9 +178,6 @@
 
       <!-- Bottom Navigation -->
       <nav class="bottom-nav">
-        <button class="nav-btn" data-target="profile" aria-label="Profil">
-          <svg viewBox="0 0 24 24"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-4.42 0-8 2.24-8 5v3h16v-3c0-2.76-3.58-5-8-5z"/></svg>
-        </button>
         <button id="admin-fab" class="fab hidden">＋</button>
         <button class="nav-btn" data-target="home" data-default aria-label="Home">
           <svg viewBox="0 0 24 24"><path d="M12 3l8 8h-3v8h-10v-8h-3z"/></svg>
