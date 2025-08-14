@@ -38,6 +38,8 @@ create table if not exists public.user_awards (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   award_id uuid not null references public.awards(id) on delete cascade,
+  text text,
+  level text check (level in ('bronze','silver','gold')),
   created_at timestamp with time zone default now(),
   unique(user_id, award_id)
 );
@@ -186,6 +188,27 @@ begin
 end;$$;
 grant execute on function public.admin_grant_award(uuid, uuid) to authenticated;
 
+-- v2 award grant: with text and level
+create or replace function public.admin_grant_award_v2(
+  p_award uuid,
+  p_user uuid,
+  p_text text,
+  p_level text
+) returns uuid language plpgsql security definer set search_path = public as $$
+declare new_id uuid;
+declare v_points int;
+begin
+  if not public.is_admin() then raise exception 'not authorized'; end if;
+  if p_level not in ('bronze','silver','gold') then raise exception 'invalid level'; end if;
+  v_points := case p_level when 'bronze' then 25 when 'silver' then 50 else 75 end;
+  insert into public.user_awards(user_id, award_id, text, level) values (p_user, p_award, p_text, p_level)
+  on conflict (user_id, award_id) do update set text = excluded.text, level = excluded.level
+  returning id into new_id;
+  update public.profiles set total_trophies = total_trophies + v_points where id = p_user;
+  return new_id;
+end;$$;
+grant execute on function public.admin_grant_award_v2(uuid, uuid, text, text) to authenticated;
+
 -- Admin remove a user's award
 create or replace function public.admin_remove_user_award(
   p_user uuid,
@@ -262,6 +285,8 @@ create policy quests_admin_write on public.quests for all using (public.is_admin
 
 -- quest_status: users can read and upsert their own row
 drop policy if exists quest_status_self on public.quest_status;
+drop policy if exists quest_status_insert_self on public.quest_status;
+drop policy if exists quest_status_update_self on public.quest_status;
 create policy quest_status_self on public.quest_status for select using (auth.uid() = user_id);
 create policy quest_status_insert_self on public.quest_status for insert with check (auth.uid() = user_id);
 create policy quest_status_update_self on public.quest_status for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
