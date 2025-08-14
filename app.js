@@ -15,7 +15,6 @@
   const futureDateEl = document.getElementById('future-date');
   const futureTrophiesEl = document.getElementById('future-trophies');
   const awardUsersChipsEl = document.getElementById('award-users-chips');
-  const awardSelectEl = document.getElementById('award-select');
   const awardListEl = document.getElementById('award-list');
   const awardTextEl = document.getElementById('award-text');
   const awardLevelEl = document.getElementById('award-level');
@@ -125,32 +124,20 @@
 
   document.getElementById('btn-give-award').addEventListener('click', async () => {
     if (!client) return alert('Supabase nicht konfiguriert.');
-    const awardId = awardSelectEl.value;
     const userIds = getSelectedUserIds('award');
     const text = (awardTextEl?.value || '').trim();
     const level = awardLevelEl?.value || 'silver';
-    if (userIds.length === 0 || !awardId) return alert('Empfänger und Award ID sind erforderlich.');
+    if (userIds.length === 0) return alert('Empfänger erforderlich.');
     for (const uid of userIds) {
-      const { error } = await client.rpc('admin_grant_award_v2', { p_award: awardId, p_user: uid, p_text: text, p_level: level });
+      const { error } = await client.rpc('admin_grant_award_text_only', { p_user: uid, p_text: text, p_level: level });
       if (error) return alert(error.message);
     }
     alert('Auszeichnung(en) vergeben.');
     adminModal.classList.add('hidden');
   });
 
-  async function loadAwardsIntoUI(){
-    if (!client || !awardSelectEl) return;
-    const { data, error } = await client.from('awards').select('id, name, emoji').order('name');
-    if (error) return;
-    awardSelectEl.innerHTML = '<option value="">Bitte auswählen...</option>';
-    (data || []).forEach(a => {
-      const opt = document.createElement('option');
-      opt.value = a.id; opt.textContent = `${a.emoji || '🏅'} ${a.name}`;
-      awardSelectEl.appendChild(opt);
-    });
-  }
   adminClose.addEventListener('click', () => adminModal.classList.add('hidden'));
-  adminFab.addEventListener('click', async () => { await loadAwardsIntoUI(); adminModal.classList.remove('hidden'); });
+  adminFab.addEventListener('click', async () => { adminModal.classList.remove('hidden'); });
 
   // Theme toggle (auto -> dark -> light)
   const THEMES = ['auto','dark','light'];
@@ -342,12 +329,22 @@
     const { data: userData } = await client.auth.getUser();
     const userId = userData?.user?.id;
     if (userId) {
-      const { data: awards } = await client.from('user_awards').select('award_id, text, level, awards(name, emoji)').eq('user_id', userId).order('created_at', { ascending: false });
+      const { data: awards } = await client
+        .from('user_awards')
+        .select('award_id, text, level, awards(name, emoji)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      const { data: awardsText } = await client
+        .from('user_awards_text')
+        .select('id, text, level')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
       awardsListEl.innerHTML = '';
-      (awards||[]).forEach(a => {
+      [...(awardsText||[]), ...(awards||[])].forEach(a => {
         const el = document.createElement('div');
         el.className = 'item';
-        const medal = a.level === 'gold' ? '🥇' : (a.level === 'silver' ? '🥈' : '🥉');
+        const level = a.level;
+        const medal = level === 'gold' ? '🥇' : (level === 'silver' ? '🥈' : '🥉');
         const text = a.text || a.awards?.name || '';
         el.textContent = `${medal} ${text}`;
         awardsListEl.appendChild(el);
@@ -661,20 +658,34 @@
     document.getElementById('public-rank-remaining').textContent = info.nextAt ? `${info.remaining} bis ${info.nextAt}` : 'Max Rank';
     document.getElementById('public-rank-percent').textContent = `${Math.round(info.progress)}%`;
 
-    const { data: awards } = await client.from('user_awards').select('award_id, text, level, awards(id, name, emoji)').eq('user_id', userId).order('created_at', { ascending: false });
+    const { data: awards } = await client
+      .from('user_awards')
+      .select('award_id, text, level, awards(id, name, emoji)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    const { data: awardsText } = await client
+      .from('user_awards_text')
+      .select('id, text, level')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
     publicAwardsEl.innerHTML = '';
     const isAdmin = await isAdminCurrentUser();
-    (awards||[]).forEach(a => {
+    [...(awardsText||[]), ...(awards||[])].forEach(a => {
       const el = document.createElement('div');
       el.className = 'item';
-      const medal = a.level === 'gold' ? '🥇' : (a.level === 'silver' ? '🥈' : '🥉');
+      const level = a.level;
+      const medal = level === 'gold' ? '🥇' : (level === 'silver' ? '🥈' : '🥉');
       const text = a.text || a.awards?.name || '';
       if (isAdmin) {
         const btn = document.createElement('button');
         btn.className = 'secondary';
         btn.textContent = 'Entfernen';
         btn.addEventListener('click', async () => {
-          await client.rpc('admin_remove_user_award', { p_user: userId, p_award: a.awards?.id });
+          if (a.awards?.id) {
+            await client.rpc('admin_remove_user_award', { p_user: userId, p_award: a.awards.id });
+          } else if (a.id) {
+            await client.rpc('admin_remove_user_award_text_only', { p_award_text_id: a.id });
+          }
           await renderPublicProfile(userId);
         });
         el.textContent = `${medal} ${text} `;
