@@ -17,6 +17,8 @@
   const awardUsersChipsEl = document.getElementById('award-users-chips');
   const awardSelectEl = document.getElementById('award-select');
   const awardListEl = document.getElementById('award-list');
+  const awardTextEl = document.getElementById('award-text');
+  const awardLevelEl = document.getElementById('award-level');
   // Participant selector modal
   const participantModal = document.getElementById('participant-modal');
   const participantSearchEl = document.getElementById('participant-search');
@@ -59,6 +61,7 @@
 
   // Supabase client placeholder, config expected in global window.SUPABASE_CONFIG
   let supabaseClient = null;
+  const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/BtQB0wz9OcJ3UzjZmqfgmj';
   function ensureSupabase() {
     if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url || !window.SUPABASE_CONFIG.anonKey) {
       console.warn('No Supabase config found. Create config.js from config.example.js');
@@ -124,9 +127,11 @@
     if (!client) return alert('Supabase nicht konfiguriert.');
     const awardId = awardSelectEl.value;
     const userIds = getSelectedUserIds('award');
+    const text = (awardTextEl?.value || '').trim();
+    const level = awardLevelEl?.value || 'silver';
     if (userIds.length === 0 || !awardId) return alert('Empfänger und Award ID sind erforderlich.');
     for (const uid of userIds) {
-      const { error } = await client.rpc('admin_grant_award', { p_award: awardId, p_user: uid });
+      const { error } = await client.rpc('admin_grant_award_v2', { p_award: awardId, p_user: uid, p_text: text, p_level: level });
       if (error) return alert(error.message);
     }
     alert('Auszeichnung(en) vergeben.');
@@ -214,7 +219,8 @@
     await ensureProfileExists(user);
     const profile = await fetchOwnProfile();
     const username = profile?.username || user.email?.split('@')[0] || user.id.slice(0,6);
-    profileUsernameEl.textContent = username;
+    const adminBadge = profile?.role === 'admin' ? '<span class="admin-badge">admin</span>' : '';
+    profileUsernameEl.innerHTML = `${username} ${adminBadge}`;
     avatarEl.src = profile?.avatar_url || `https://api.dicebear.com/8.x/identicon/svg?seed=${encodeURIComponent(user.id)}`;
 
     // Render with live data
@@ -336,12 +342,14 @@
     const { data: userData } = await client.auth.getUser();
     const userId = userData?.user?.id;
     if (userId) {
-      const { data: awards } = await client.from('user_awards').select('award_id, awards(name, emoji)').eq('user_id', userId).order('created_at', { ascending: false });
+      const { data: awards } = await client.from('user_awards').select('award_id, text, level, awards(name, emoji)').eq('user_id', userId).order('created_at', { ascending: false });
       awardsListEl.innerHTML = '';
       (awards||[]).forEach(a => {
         const el = document.createElement('div');
         el.className = 'item';
-        el.textContent = `${a.awards?.emoji || '🏅'} ${a.awards?.name || ''}`;
+        const medal = a.level === 'gold' ? '🥇' : (a.level === 'silver' ? '🥈' : '🥉');
+        const text = a.text || a.awards?.name || '';
+        el.textContent = `${medal} ${text}`;
         awardsListEl.appendChild(el);
       });
       if (!awards || awards.length === 0) awardsListEl.innerHTML = '<div class="item">Noch keine Auszeichnungen</div>';
@@ -375,14 +383,15 @@
 
   async function renderLeaderboard(){
     if (!client) return;
-    const { data, error } = await client.from('profiles').select('id, username, total_trophies, avatar_url').order('total_trophies', { ascending: false }).limit(50);
+    const { data, error } = await client.from('profiles').select('id, username, total_trophies, avatar_url, role').order('total_trophies', { ascending: false }).limit(50);
     if (error) return;
     leaderboardListEl.innerHTML = '';
     (data || []).forEach((r, idx) => {
       const el = document.createElement('div');
       el.className = 'item user';
       const avatar = r.avatar_url || `https://api.dicebear.com/8.x/identicon/svg?seed=${encodeURIComponent(r.username||String(idx))}`;
-      el.innerHTML = `<img src="${avatar}" alt="avatar"/><div><div><strong>#${idx+1}</strong> @${r.username || 'user'}</div><div>${r.total_trophies||0} 🏆</div></div>`;
+      const adminBadge = r.role === 'admin' ? '<span class="admin-badge">admin</span>' : '';
+      el.innerHTML = `<img src="${avatar}" alt="avatar"/><div><div><strong>#${idx+1}</strong> @${r.username || 'user'} ${adminBadge}</div><div>${r.total_trophies||0} 🏆</div></div>`;
       el.addEventListener('click', () => showPublicProfile(r));
       if (idx < 3) el.style.background = '#332b00';
       leaderboardListEl.appendChild(el);
@@ -537,13 +546,14 @@
     const q = e.target.value.trim();
     searchResultsEl.innerHTML = '';
     if (!q || !client) return;
-    const { data, error } = await client.from('profiles').select('id, username, total_trophies, avatar_url').ilike('username', `%${q}%`).limit(20);
+    const { data, error } = await client.from('profiles').select('id, username, total_trophies, avatar_url, role').ilike('username', `%${q}%`).limit(20);
     if (error) return;
     data.forEach(row => {
       const el = document.createElement('div');
       el.className = 'item user';
       const avatar = row.avatar_url || `https://api.dicebear.com/8.x/identicon/svg?seed=${encodeURIComponent(row.id)}`;
-      el.innerHTML = `<img src="${avatar}" alt="avatar"/><div><div><strong>@${row.username || 'user'}</strong></div><div>${row.total_trophies||0} 🏆</div></div>`;
+      const adminBadge = row.role === 'admin' ? '<span class="admin-badge">admin</span>' : '';
+      el.innerHTML = `<img src="${avatar}" alt="avatar"/><div><div><strong>@${row.username || 'user'}</strong> ${adminBadge}</div><div>${row.total_trophies||0} 🏆</div></div>`;
       el.addEventListener('click', () => showPublicProfile(row));
       searchResultsEl.appendChild(el);
     });
@@ -639,7 +649,8 @@
 
   async function renderPublicProfile(userId){
     const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
-    publicUsernameEl.textContent = `@${profile?.username || 'user'}`;
+    const adminBadge = profile?.role === 'admin' ? '<span class="admin-badge">admin</span>' : '';
+    publicUsernameEl.innerHTML = `@${profile?.username || 'user'} ${adminBadge}`;
     publicAvatarEl.src = profile?.avatar_url || `https://api.dicebear.com/8.x/identicon/svg?seed=${encodeURIComponent(userId)}`;
     const total = profile?.total_trophies || 0;
     publicTrophiesEl.textContent = String(total);
@@ -650,12 +661,14 @@
     document.getElementById('public-rank-remaining').textContent = info.nextAt ? `${info.remaining} bis ${info.nextAt}` : 'Max Rank';
     document.getElementById('public-rank-percent').textContent = `${Math.round(info.progress)}%`;
 
-    const { data: awards } = await client.from('user_awards').select('award_id, awards(id, name, emoji)').eq('user_id', userId).order('created_at', { ascending: false });
+    const { data: awards } = await client.from('user_awards').select('award_id, text, level, awards(id, name, emoji)').eq('user_id', userId).order('created_at', { ascending: false });
     publicAwardsEl.innerHTML = '';
     const isAdmin = await isAdminCurrentUser();
     (awards||[]).forEach(a => {
       const el = document.createElement('div');
       el.className = 'item';
+      const medal = a.level === 'gold' ? '🥇' : (a.level === 'silver' ? '🥈' : '🥉');
+      const text = a.text || a.awards?.name || '';
       if (isAdmin) {
         const btn = document.createElement('button');
         btn.className = 'secondary';
@@ -664,10 +677,10 @@
           await client.rpc('admin_remove_user_award', { p_user: userId, p_award: a.awards?.id });
           await renderPublicProfile(userId);
         });
-        el.textContent = `${a.awards?.emoji || '🏅'} ${a.awards?.name || ''} `;
+        el.textContent = `${medal} ${text} `;
         el.appendChild(btn);
       } else {
-        el.textContent = `${a.awards?.emoji || '🏅'} ${a.awards?.name || ''}`;
+        el.textContent = `${medal} ${text}`;
       }
       publicAwardsEl.appendChild(el);
     });
