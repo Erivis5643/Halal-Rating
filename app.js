@@ -349,7 +349,9 @@
         el.textContent = `${medal} ${text}`;
         awardsListEl.appendChild(el);
       });
-      if (!awards || awards.length === 0) awardsListEl.innerHTML = '<div class="item">Noch keine Auszeichnungen</div>';
+      if ((!awards || awards.length === 0) && (!awardsText || awardsText.length === 0)) {
+        awardsListEl.innerHTML = '<div class="item">Noch keine Auszeichnungen</div>';
+      }
 
       const { data: evs } = await client
         .from('event_participants')
@@ -695,7 +697,9 @@
       }
       publicAwardsEl.appendChild(el);
     });
-    if (!awards || awards.length === 0) publicAwardsEl.innerHTML = '<div class="item">Keine Auszeichnungen</div>';
+    if ((!awards || awards.length === 0) && (!awardsText || awardsText.length === 0)) {
+      publicAwardsEl.innerHTML = '<div class="item">Keine Auszeichnungen</div>';
+    }
 
     const { data: evs } = await client
       .from('event_participants')
