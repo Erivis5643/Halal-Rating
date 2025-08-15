@@ -55,6 +55,7 @@
   const searchResultsEl = document.getElementById('search-results');
   const futureEventsListEl = document.getElementById('future-events-list');
   const questsListEl = document.getElementById('quests-list');
+  const questsInfoEl = document.getElementById('quests-info');
   const btnTabQuests = document.getElementById('btn-tab-quests');
   const btnTabFuture = document.getElementById('btn-tab-future');
 
@@ -517,12 +518,14 @@
     btnTabFuture?.classList.remove('active');
     questsListEl?.classList.remove('hidden');
     futureEventsListEl?.classList.add('hidden');
+    questsInfoEl?.classList.remove('hidden');
   }
   function showFutureTab(){
     btnTabFuture?.classList.add('active');
     btnTabQuests?.classList.remove('active');
     futureEventsListEl?.classList.remove('hidden');
     questsListEl?.classList.add('hidden');
+    questsInfoEl?.classList.add('hidden');
   }
   btnTabQuests?.addEventListener('click', async () => { showQuestsTab(); await renderQuests(); });
   btnTabFuture?.addEventListener('click', async () => { showFutureTab(); await renderFutureEvents(); });
