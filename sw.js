@@ -1,10 +1,9 @@
-const CACHE_NAME = 'halal-rating-v2';
+const CACHE_NAME = 'halal-rating-v3';
 const ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
-  '/config.js',
   '/manifest.webmanifest',
   '/fotos/logo.png',
   '/fotos/unrankt.png'
@@ -35,8 +34,13 @@ self.addEventListener('fetch', (event) => {
 
   // Never intercept Supabase or other cross-origin API calls
   if (!sameOrigin) {
-    // Let the network handle cross-origin requests (no caching)
-    return; // do not call respondWith, so browser does normal fetch
+    return;
+  }
+
+  // Network-only for config.js to always get live keys
+  if (reqUrl.pathname.endsWith('/config.js')) {
+    event.respondWith(fetch(request));
+    return;
   }
 
   // Navigation requests: network first with fallback to cache
@@ -53,7 +57,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Images under /fotos/: cache-first, but don't cache failed responses
+  // Images under /fotos/: cache-first, avoid caching failures
   if (reqUrl.pathname.startsWith('/fotos/')) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -70,8 +74,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets (CSS/JS/manifest): stale-while-revalidate
-  if (reqUrl.pathname.endsWith('.css') || reqUrl.pathname.endsWith('.js') || reqUrl.pathname.endsWith('.webmanifest')) {
+  // JS/CSS: network-first to avoid stale code
+  if (reqUrl.pathname.endsWith('.js') || reqUrl.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Manifest: stale-while-revalidate
+  if (reqUrl.pathname.endsWith('.webmanifest')) {
     event.respondWith(
       caches.match(request).then((cached) => {
         const fetchPromise = fetch(request).then((response) => {
@@ -87,11 +105,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: try cache, then network (no caching of errors)
+  // Default: try cache, then network
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(request).then((response) => response);
+      return fetch(request);
     })
   );
 });
