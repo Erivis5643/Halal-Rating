@@ -59,10 +59,6 @@
   const btnTabQuests = document.getElementById('btn-tab-quests');
   const btnTabFuture = document.getElementById('btn-tab-future');
 
-  // Containers to hide/show based on auth
-  const screensContainer = document.getElementById('screens');
-  const bottomNav = document.querySelector('.bottom-nav');
-
   // Supabase client placeholder, config expected in global window.SUPABASE_CONFIG
   let supabaseClient = null;
   const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/BtQB0wz9OcJ3UzjZmqfgmj';
@@ -72,65 +68,7 @@
       return null;
     }
     if (!supabaseClient) {
-      supabaseClient = window.supabase.createClient(
-        window.SUPABASE_CONFIG.url,
-        window.SUPABASE_CONFIG.anonKey,
-        { auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage } }
-      );
-      if (!window.__authListenerSetup) {
-        window.__authListenerSetup = true;
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth state change:', event, session?.user?.email);
-          
-          try {
-            if (event === 'SIGNED_IN' && session && session.user) {
-              authModal.classList.add('hidden');
-              screensContainer?.classList.remove('hidden');
-              bottomNav?.classList.remove('hidden');
-              await onLogin(session.user);
-            } else if (event === 'SIGNED_OUT' || !session) {
-              authModal.classList.remove('hidden');
-              screensContainer?.classList.add('hidden');
-              bottomNav?.classList.add('hidden');
-              
-              // Clear any remaining auth data
-              Object.keys(localStorage).forEach(k => { 
-                if (k.startsWith('sb-') || k.includes('supabase')) {
-                  localStorage.removeItem(k);
-                }
-              });
-              Object.keys(sessionStorage).forEach(k => { 
-                if (k.startsWith('sb-') || k.includes('supabase')) {
-                  sessionStorage.removeItem(k);
-                }
-              });
-            } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
-              // Token refreshed, ensure we're still logged in
-              try {
-                const { data: userData, error: userError } = await supabaseClient.auth.getUser();
-                if (!userError && userData.user) {
-                  // Still valid, continue
-                  return;
-                }
-              } catch (err) {
-                console.error('Token refresh validation error:', err);
-              }
-              
-              // Invalid token, sign out
-              await supabaseClient.auth.signOut();
-            }
-          } catch (err) {
-            console.error('Auth state change error:', err);
-            // On any error, clear auth and show login
-            try {
-              await supabaseClient.auth.signOut();
-            } catch {}
-            authModal.classList.remove('hidden');
-            screensContainer?.classList.add('hidden');
-            bottomNav?.classList.add('hidden');
-          }
-        });
-      }
+      supabaseClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
     }
     return supabaseClient;
   }
@@ -227,57 +165,14 @@
   async function refreshSession() {
     if (!client) {
       authModal.classList.remove('hidden');
-      screensContainer?.classList.add('hidden');
-      bottomNav?.classList.add('hidden');
       return;
     }
-    
-    try {
-      const { data, error } = await client.auth.getSession();
-      if (error) {
-        console.error('Session error:', error);
-        // Clear any corrupted session data
-        await client.auth.signOut();
-        authModal.classList.remove('hidden');
-        screensContainer?.classList.add('hidden');
-        bottomNav?.classList.add('hidden');
-        return;
-      }
-      
-      if (!data.session || !data.session.user) {
-        authModal.classList.remove('hidden');
-        screensContainer?.classList.add('hidden');
-        bottomNav?.classList.add('hidden');
-      } else {
-        // Verify the user still exists and is valid
-        try {
-          const { data: userData, error: userError } = await client.auth.getUser();
-          if (userError || !userData.user) {
-            throw new Error('Invalid user data');
-          }
-          
-          authModal.classList.add('hidden');
-          screensContainer?.classList.remove('hidden');
-          bottomNav?.classList.remove('hidden');
-          await onLogin(data.session.user);
-        } catch (userErr) {
-          console.error('User validation error:', userErr);
-          // Clear invalid session
-          await client.auth.signOut();
-          authModal.classList.remove('hidden');
-          screensContainer?.classList.add('hidden');
-          bottomNav?.classList.add('hidden');
-        }
-      }
-    } catch (err) {
-      console.error('Session refresh error:', err);
-      // Clear everything on error
-      try {
-        await client.auth.signOut();
-      } catch {}
+    const { data } = await client.auth.getSession();
+    if (!data.session) {
       authModal.classList.remove('hidden');
-      screensContainer?.classList.add('hidden');
-      bottomNav?.classList.add('hidden');
+    } else {
+      authModal.classList.add('hidden');
+      await onLogin(data.session.user);
     }
   }
 
@@ -286,15 +181,9 @@
     const email = emailEl.value.trim();
     const password = passwordEl.value;
     if (!email || !password) return alert('Bitte E-Mail und Passwort eingeben.');
-    
-    try {
-      const { error } = await client.auth.signInWithPassword({ email, password });
-      if (error) return alert(error.message);
-      await refreshSession();
-    } catch (err) {
-      console.error('Login error:', err);
-      alert('Login fehlgeschlagen. Bitte versuchen Sie es erneut.');
-    }
+    const { error } = await client.auth.signInWithPassword({ email, password });
+    if (error) return alert(error.message);
+    await refreshSession();
   });
 
   btnRegister.addEventListener('click', async () => {
@@ -302,45 +191,15 @@
     const email = emailEl.value.trim();
     const password = passwordEl.value;
     if (!email || !password) return alert('Bitte E-Mail und Passwort eingeben.');
-    
-    try {
-      const { error } = await client.auth.signUp({ email, password });
-      if (error) return alert(error.message);
-      alert('Registrierung erfolgreich. Bitte E-Mail bestätigen und dann einloggen.');
-    } catch (err) {
-      console.error('Register error:', err);
-      alert('Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
-    }
+    const { error } = await client.auth.signUp({ email, password });
+    if (error) return alert(error.message);
+    alert('Registrierung erfolgreich. Bitte E-Mail bestätigen und dann einloggen.');
   });
 
   btnLogout.addEventListener('click', async () => {
     if (!client) return;
-    
-    try {
-      // Clear all Supabase session data first
-      Object.keys(localStorage).forEach(k => { 
-        if (k.startsWith('sb-') || k.includes('supabase')) {
-          localStorage.removeItem(k);
-        }
-      });
-      
-      // Clear session storage
-      Object.keys(sessionStorage).forEach(k => { 
-        if (k.startsWith('sb-') || k.includes('supabase')) {
-          sessionStorage.removeItem(k);
-        }
-      });
-      
-      // Sign out from Supabase
-      await client.auth.signOut();
-      
-      // Force reload to clear any stuck state
-      location.reload();
-    } catch (err) {
-      console.error('Logout error:', err);
-      // Force reload anyway
-      location.reload();
-    }
+    await client.auth.signOut();
+    location.reload();
   });
 
   // After login
@@ -419,7 +278,7 @@
     return { name: current.name, progress, nextAt, remaining };
   }
 
-  // Map rank names to emblem file paths under /fotos/
+  // Map rank names to emblem file paths under ./fotos/
   function resolveRankEmblem(rankName){
     const map = {
       'Unrankt': 'unrankt.png',
@@ -440,7 +299,7 @@
       'Halal-Schlachter': 'halal-schlachter.png'
     };
     const file = map[rankName] || 'unrankt.png';
-    return `/fotos/${file}`;
+    return `./fotos/${file}`;
   }
 
   function attachRankEmblem(imgEl, rankName){
@@ -451,7 +310,7 @@
         triedJpg = true;
         imgEl.src = imgEl.src.replace('.png', '.jpg');
       } else {
-        imgEl.src = '/fotos/unrankt.png';
+        imgEl.src = './fotos/unrankt.png';
       }
     };
     imgEl.src = resolveRankEmblem(rankName);
@@ -909,9 +768,6 @@
   }
 
   // Init
-  // Hide UI until we know auth state
-  screensContainer?.classList.add('hidden');
-  bottomNav?.classList.add('hidden');
   refreshSession();
 })();
 
