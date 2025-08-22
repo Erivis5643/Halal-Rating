@@ -4,23 +4,38 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Halal Rating</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Halal Rating App - Track your progress and achievements" />
+    <meta name="theme-color" content="#4a90e2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Halal Rating" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#4a90e2" />
+    <meta name="msapplication-config" content="none" />
+    
+    <!-- PWA Icons -->
+    <link rel="icon" href="./fotos/logo.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./fotos/logo.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="./fotos/logo.png" />
+    <link rel="apple-touch-icon" sizes="57x57" href="./fotos/logo.png" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json" />
+    
+    <!-- Preconnect and Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
-
-    <!-- PWA: Manifest & Theme -->
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#111111" />
-    <meta name="application-name" content="Halal Rating" />
-
-    <!-- Icons: Favicon and Apple Touch -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/fotos/logo.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/fotos/logo.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/fotos/logo.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/fotos/logo.png" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Halal Rating" />
   </head>
   <body>
     <!-- Image preview modal -->
@@ -44,9 +59,6 @@
             <button id="auth-register" class="secondary">Registrieren</button>
           </div>
           <p class="hint">Du brauchst ein Konto, um die App zu nutzen.</p>
-          <div class="row top">
-            <button id="force-clear-cache" class="secondary" style="font-size: 12px;">Force Clear Cache</button>
-          </div>
         </div>
       </div>
 
@@ -168,7 +180,7 @@
             <ul>
               <li>Quests aktualisieren sich täglich zufällig nach 00:00 Uhr.</li>
               <li>Nach Questabschluss: WhatsApp-Nachricht senden</li>
-              <li>Ohne Foto, Video oder Zeugenbestätigung keine "garantierte" Anerkennung</li>
+              <li>Ohne Foto, Video oder Zeugenbestätigung keine “garantierte” Anerkennung</li>
               <li>Trophäenzahl = Minimum, Bonus möglich</li>
               <li>Whatsapp: <a href="https://chat.whatsapp.com/BtQB0wz9OcJ3UzjZmqfgmj" target="_blank" rel="noopener">Gruppe öffnen</a></li>
             </ul>
@@ -237,49 +249,8 @@
     <script src="./config.js"></script>
     <!-- Supabase JS (UMD) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-
-    <!-- Register Service Worker -->
-    <script>
-      // Temporarily disabled to test auth issues
-      /*
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('SW registered successfully:', registration.scope);
-              
-              // Check for updates
-              registration.addEventListener('updatefound', () => {
-                console.log('SW update found');
-              });
-            })
-            .catch(function(e) {
-              console.warn('SW registration failed:', e);
-            });
-        });
-      }
-      */
-      
-      // Force clear cache function
-      document.getElementById('force-clear-cache').addEventListener('click', async function() {
-        if ('caches' in window) {
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map(name => caches.delete(name)));
-          console.log('All caches cleared');
-        }
-        if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          for (let registration of registrations) {
-            await registration.unregister();
-            console.log('SW unregistered');
-          }
-        }
-        localStorage.clear();
-        sessionStorage.clear();
-        location.reload();
-      });
-    </script>
-
+    <!-- PWA Manager -->
+    <script src="./pwa.js"></script>
     <script src="./app.js"></script>
   </body>
   </html>
