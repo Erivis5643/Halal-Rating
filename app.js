@@ -59,6 +59,10 @@
   const btnTabQuests = document.getElementById('btn-tab-quests');
   const btnTabFuture = document.getElementById('btn-tab-future');
 
+  // Containers to hide/show based on auth
+  const screensContainer = document.getElementById('screens');
+  const bottomNav = document.querySelector('.bottom-nav');
+
   // Supabase client placeholder, config expected in global window.SUPABASE_CONFIG
   let supabaseClient = null;
   const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/BtQB0wz9OcJ3UzjZmqfgmj';
@@ -78,9 +82,13 @@
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
           if (session && session.user) {
             authModal.classList.add('hidden');
+            screensContainer?.classList.remove('hidden');
+            bottomNav?.classList.remove('hidden');
             await onLogin(session.user);
           } else {
             authModal.classList.remove('hidden');
+            screensContainer?.classList.add('hidden');
+            bottomNav?.classList.add('hidden');
           }
         });
       }
@@ -180,13 +188,19 @@
   async function refreshSession() {
     if (!client) {
       authModal.classList.remove('hidden');
+      screensContainer?.classList.add('hidden');
+      bottomNav?.classList.add('hidden');
       return;
     }
     const { data } = await client.auth.getSession();
     if (!data.session) {
       authModal.classList.remove('hidden');
+      screensContainer?.classList.add('hidden');
+      bottomNav?.classList.add('hidden');
     } else {
       authModal.classList.add('hidden');
+      screensContainer?.classList.remove('hidden');
+      bottomNav?.classList.remove('hidden');
       await onLogin(data.session.user);
     }
   }
@@ -213,6 +227,10 @@
 
   btnLogout.addEventListener('click', async () => {
     if (!client) return;
+    try {
+      // Clear Supabase session keys to avoid stuck sessions
+      Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k); });
+    } catch {}
     await client.auth.signOut();
     location.reload();
   });
@@ -293,7 +311,7 @@
     return { name: current.name, progress, nextAt, remaining };
   }
 
-  // Map rank names to emblem file paths under ./fotos/
+  // Map rank names to emblem file paths under /fotos/
   function resolveRankEmblem(rankName){
     const map = {
       'Unrankt': 'unrankt.png',
@@ -314,7 +332,7 @@
       'Halal-Schlachter': 'halal-schlachter.png'
     };
     const file = map[rankName] || 'unrankt.png';
-    return `./fotos/${file}`;
+    return `/fotos/${file}`;
   }
 
   function attachRankEmblem(imgEl, rankName){
@@ -325,7 +343,7 @@
         triedJpg = true;
         imgEl.src = imgEl.src.replace('.png', '.jpg');
       } else {
-        imgEl.src = './fotos/unrankt.png';
+        imgEl.src = '/fotos/unrankt.png';
       }
     };
     imgEl.src = resolveRankEmblem(rankName);
@@ -783,6 +801,9 @@
   }
 
   // Init
+  // Hide UI until we know auth state
+  screensContainer?.classList.add('hidden');
+  bottomNav?.classList.add('hidden');
   refreshSession();
 })();
 
