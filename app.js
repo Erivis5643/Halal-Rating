@@ -68,7 +68,22 @@
       return null;
     }
     if (!supabaseClient) {
-      supabaseClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+      supabaseClient = window.supabase.createClient(
+        window.SUPABASE_CONFIG.url,
+        window.SUPABASE_CONFIG.anonKey,
+        { auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage } }
+      );
+      if (!window.__authListenerSetup) {
+        window.__authListenerSetup = true;
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+          if (session && session.user) {
+            authModal.classList.add('hidden');
+            await onLogin(session.user);
+          } else {
+            authModal.classList.remove('hidden');
+          }
+        });
+      }
     }
     return supabaseClient;
   }
