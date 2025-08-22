@@ -1,6 +1,6 @@
-const CACHE_NAME = 'halal-rating-v4';
+const CACHE_NAME = 'halal-rating-v5';
 
-// Only cache essential static assets
+// Only cache essential static assets, never auth-related
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -39,6 +39,7 @@ self.addEventListener('fetch', (event) => {
   // - Any cross-origin requests
   // - Any requests with query parameters (dynamic content)
   // - Any requests to config.js
+  // - Any auth-related requests
   if (
     !url.origin.includes(location.hostname) || // Cross-origin
     url.pathname.includes('supabase') ||       // Supabase API
@@ -46,7 +47,12 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('config.js') ||     // Config file
     url.search ||                             // Query parameters
     url.pathname.includes('auth') ||          // Auth endpoints
-    url.pathname.includes('storage')          // Storage endpoints
+    url.pathname.includes('storage') ||       // Storage endpoints
+    url.pathname.includes('rest') ||          // REST endpoints
+    url.pathname.includes('realtime') ||      // Realtime endpoints
+    url.pathname.includes('functions') ||     // Edge functions
+    url.pathname.includes('graphql') ||       // GraphQL
+    url.pathname.includes('postgrest')        // PostgREST
   ) {
     return; // Let browser handle normally
   }
