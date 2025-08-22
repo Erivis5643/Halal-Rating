@@ -240,6 +240,8 @@
 
     <!-- Register Service Worker -->
     <script>
+      // Temporarily disabled to test auth issues
+      /*
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js')
@@ -256,6 +258,7 @@
             });
         });
       }
+      */
       
       // Force clear cache function
       document.getElementById('force-clear-cache').addEventListener('click', async function() {
