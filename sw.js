@@ -1,6 +1,6 @@
-const CACHE_NAME = 'halal-rating-v5';
+const CACHE_NAME = 'halal-rating-v6';
 
-// Only cache essential static assets, never auth-related
+// Only cache the most basic static assets
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('SW installing...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
@@ -18,6 +19,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('SW activating...');
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.map((key) => {
       if (key !== CACHE_NAME) return caches.delete(key);
@@ -34,12 +36,10 @@ self.addEventListener('fetch', (event) => {
   
   const url = new URL(request.url);
   
+  // Debug logging
+  console.log('SW fetch:', url.pathname, url.origin, location.hostname);
+  
   // NEVER intercept these - let them go to network:
-  // - Any API calls (Supabase, etc.)
-  // - Any cross-origin requests
-  // - Any requests with query parameters (dynamic content)
-  // - Any requests to config.js
-  // - Any auth-related requests
   if (
     !url.origin.includes(location.hostname) || // Cross-origin
     url.pathname.includes('supabase') ||       // Supabase API
@@ -52,13 +52,18 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('realtime') ||      // Realtime endpoints
     url.pathname.includes('functions') ||     // Edge functions
     url.pathname.includes('graphql') ||       // GraphQL
-    url.pathname.includes('postgrest')        // PostgREST
+    url.pathname.includes('postgrest') ||     // PostgREST
+    url.pathname.includes('cdn.jsdelivr.net') || // External CDN
+    url.pathname.includes('fonts.gstatic.com') || // Google Fonts
+    url.pathname.includes('fonts.googleapis.com') // Google Fonts
   ) {
+    console.log('SW: letting request go to network:', url.pathname);
     return; // Let browser handle normally
   }
   
   // For static assets only: try cache first, then network
   if (STATIC_ASSETS.some(asset => url.pathname === asset || url.pathname.endsWith(asset.split('/').pop()))) {
+    console.log('SW: caching static asset:', url.pathname);
     event.respondWith(
       caches.match(request).then((cached) => {
         return cached || fetch(request).then((response) => {
@@ -75,5 +80,6 @@ self.addEventListener('fetch', (event) => {
   }
   
   // For everything else: network only, no caching
+  console.log('SW: network only for:', url.pathname);
   event.respondWith(fetch(request));
 });
