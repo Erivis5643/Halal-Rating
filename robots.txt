@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# PWA files
+Allow: /manifest.json
+Allow: /sw.js
+Allow: /pwa.js
+
+# Sitemap (if you create one later)
+# Sitemap: https://halalrating.netlify.app/sitemap.xml
