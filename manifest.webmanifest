@@ -2,6 +2,7 @@
   "name": "Halal Rating",
   "short_name": "Halal Rating",
   "description": "Ranks, awards, and events — Halal Rating.",
+  "version": "1.0.0",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
