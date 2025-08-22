@@ -20,7 +20,7 @@
     <link rel="apple-touch-icon" sizes="512x512" href="/fotos/logo.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Halal" />
+    <meta name="apple-mobile-web-app-title" content="Halal Rating" />
   </head>
   <body>
     <!-- Image preview modal -->
@@ -44,6 +44,9 @@
             <button id="auth-register" class="secondary">Registrieren</button>
           </div>
           <p class="hint">Du brauchst ein Konto, um die App zu nutzen.</p>
+          <div class="row top">
+            <button id="force-clear-cache" class="secondary" style="font-size: 12px;">Force Clear Cache</button>
+          </div>
         </div>
       </div>
 
@@ -165,7 +168,7 @@
             <ul>
               <li>Quests aktualisieren sich täglich zufällig nach 00:00 Uhr.</li>
               <li>Nach Questabschluss: WhatsApp-Nachricht senden</li>
-              <li>Ohne Foto, Video oder Zeugenbestätigung keine “garantierte” Anerkennung</li>
+              <li>Ohne Foto, Video oder Zeugenbestätigung keine "garantierte" Anerkennung</li>
               <li>Trophäenzahl = Minimum, Bonus möglich</li>
               <li>Whatsapp: <a href="https://chat.whatsapp.com/BtQB0wz9OcJ3UzjZmqfgmj" target="_blank" rel="noopener">Gruppe öffnen</a></li>
             </ul>
@@ -239,11 +242,39 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').catch(function(e){
-            console.warn('SW registration failed', e);
-          });
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered successfully:', registration.scope);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                console.log('SW update found');
+              });
+            })
+            .catch(function(e) {
+              console.warn('SW registration failed:', e);
+            });
         });
       }
+      
+      // Force clear cache function
+      document.getElementById('force-clear-cache').addEventListener('click', async function() {
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+          console.log('All caches cleared');
+        }
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let registration of registrations) {
+            await registration.unregister();
+            console.log('SW unregistered');
+          }
+        }
+        localStorage.clear();
+        sessionStorage.clear();
+        location.reload();
+      });
     </script>
 
     <script src="./app.js"></script>
