@@ -1,13 +1,9 @@
-const CACHE_NAME = 'halal-rating-v6';
+const CACHE_NAME = 'halal-rating-v7';
 
-// Only cache the most basic static assets
+// Only cache truly static assets that never change
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.webmanifest',
-  '/fotos/logo.png'
+  '/fotos/logo.png',
+  '/styles.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -37,7 +33,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   
   // Debug logging
-  console.log('SW fetch:', url.pathname, url.origin, location.hostname);
+  console.log('SW fetch:', url.pathname);
   
   // NEVER intercept these - let them go to network:
   if (
@@ -55,7 +51,11 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('postgrest') ||     // PostgREST
     url.pathname.includes('cdn.jsdelivr.net') || // External CDN
     url.pathname.includes('fonts.gstatic.com') || // Google Fonts
-    url.pathname.includes('fonts.googleapis.com') // Google Fonts
+    url.pathname.includes('fonts.googleapis.com') || // Google Fonts
+    url.pathname === '/' ||                   // Root HTML
+    url.pathname === '/index.html' ||         // Main HTML
+    url.pathname === '/app.js' ||             // Main JS
+    url.pathname === '/manifest.webmanifest'  // Manifest
   ) {
     console.log('SW: letting request go to network:', url.pathname);
     return; // Let browser handle normally
