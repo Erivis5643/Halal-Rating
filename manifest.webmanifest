@@ -1,8 +1,8 @@
 {
   "name": "Halal Rating",
-  "short_name": "Halal",
+  "short_name": "Halal Rating",
   "description": "Ranks, awards, and events — Halal Rating.",
-  "start_url": ".",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
